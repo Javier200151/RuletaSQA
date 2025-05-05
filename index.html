@@ -57,8 +57,6 @@
       font-weight: bold;
       color: green;
     }
-    .rolHQ { color: red; font-weight: bold; }
-    .resta { color: goldenrod; }
   </style>
 </head>
 <body>
@@ -134,32 +132,33 @@
       // Roles HQ eliminan al jugador directamente
       for (const entrada of orbatsAnteriores) {
         const nombre = entrada.nombre;
-        const rol = entrada.rol.toLowerCase();
-        if (rolesHQ.includes(rol) && nombre in resultadoPapeletas) {
+        const rol = entrada.rol.trim();
+        if (rolesHQ.includes(rol.toLowerCase()) && nombre in resultadoPapeletas) {
           resultadoPapeletas[nombre] = 0;
-          justificaciones[nombre].push(`<span class="rolHQ">Rol HQ</span>`);
+          justificaciones[nombre] = [rol]; // Solo ese motivo
         }
       }
 
       // Roles de responsabilidad restan -1 (si aún tiene papeletas)
       for (const entrada of orbatsAnteriores) {
         const nombre = entrada.nombre;
-        const rol = entrada.rol.toLowerCase();
+        const rol = entrada.rol.trim();
         if (
-          rolesResp.includes(rol) &&
+          rolesResp.includes(rol.toLowerCase()) &&
           nombre in resultadoPapeletas &&
           resultadoPapeletas[nombre] > 0
         ) {
           resultadoPapeletas[nombre]--;
-          justificaciones[nombre].push(`<span class="resta">-1</span>`);
+          justificaciones[nombre].push(rol);
         }
       }
 
-      // Mostrar resultado con justificación
       const salida = Object.entries(resultadoPapeletas)
         .map(([nombre, count]) => {
-          const detalles = justificaciones[nombre]?.join(" ") || "";
-          return `${nombre} - ${count} ${detalles}`;
+          const motivos = justificaciones[nombre]?.join(", ");
+          return motivos
+            ? `${nombre} - ${count} (${motivos})`
+            : `${nombre} - ${count}`;
         })
         .join("\n");
 
