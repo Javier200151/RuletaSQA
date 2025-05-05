@@ -4,39 +4,94 @@
   <meta charset="UTF-8">
   <title>Gestor de Papeletas - ORBAT</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    textarea { width: 100%; height: 100px; margin-bottom: 10px; }
-    button { margin: 10px 0; padding: 10px 20px; }
-    pre { background: #f4f4f4; padding: 10px; white-space: pre-wrap; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f2f2f2;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    textarea {
+      width: 100%;
+      height: 120px;
+      margin-bottom: 15px;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background: #fff;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin: 10px 0 5px;
+    }
+    button {
+      background-color: #007bff;
+      border: none;
+      color: white;
+      padding: 12px 25px;
+      font-size: 16px;
+      margin: 15px 0;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    pre {
+      background: #ffffff;
+      padding: 15px;
+      border-left: 5px solid #007bff;
+      font-family: monospace;
+      white-space: pre-wrap;
+      border-radius: 5px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .ganador {
+      font-size: 20px;
+      font-weight: bold;
+      color: green;
+    }
+    .rolHQ { color: red; font-weight: bold; }
+    .resta { color: goldenrod; }
   </style>
 </head>
 <body>
 
-  <h1>Gestor de Papeletas</h1>
+  <h1>Gestor de Papeletas - ORBAT</h1>
 
-  <h3>ORBAT 1</h3>
+  <label for="orbat1">ORBAT 1</label>
   <textarea id="orbat1"></textarea>
 
-  <h3>ORBAT 2</h3>
+  <label for="orbat2">ORBAT 2</label>
   <textarea id="orbat2"></textarea>
 
-  <h3>ORBAT 3</h3>
+  <label for="orbat3">ORBAT 3</label>
   <textarea id="orbat3"></textarea>
 
-  <h3>ORBAT 4 (Base del sorteo)</h3>
+  <label for="orbat4">ORBAT 4 (Base del sorteo)</label>
   <textarea id="orbat4"></textarea>
 
-  <h3>Roles de responsabilidad (uno por línea)</h3>
-  <textarea id="responsables"></textarea>
+  <label for="responsables">Roles de responsabilidad (uno por línea)</label>
+  <textarea id="responsables" placeholder="Ej: Teniente&#10;RTO&#10;TACP"></textarea>
 
-  <button onclick="analizar()">Analizar papeletas</button>
+  <label for="rolesHQ">Roles de HQ (eliminan todas las papeletas, uno por línea)</label>
+  <textarea id="rolesHQ" placeholder="Ej: Teniente&#10;Comandante"></textarea>
+
+  <button onclick="analizar()">🔍 Analizar papeletas</button>
   <pre id="resultado"></pre>
 
   <button onclick="sortear()">🎲 Hacer sorteo</button>
-  <pre id="ganador"></pre>
+  <pre id="ganador" class="ganador"></pre>
 
   <script>
     let resultadoPapeletas = {};
+    let justificaciones = {};
 
     function extraerJugadores(orbatText) {
       const regex = /([^\n-]+)\s*\([^)]+\)-([^\n]+)/g;
@@ -61,25 +116,54 @@
         .map(r => r.trim().toLowerCase())
         .filter(r => r);
 
+      const rolesHQ = document.getElementById("rolesHQ").value
+        .split("\n")
+        .map(r => r.trim().toLowerCase())
+        .filter(r => r);
+
       resultadoPapeletas = {};
+      justificaciones = {};
+
       for (const jugador of orbat4) {
         resultadoPapeletas[jugador.nombre] = 4;
+        justificaciones[jugador.nombre] = [];
       }
 
       const orbatsAnteriores = [...orbat1, ...orbat2, ...orbat3];
+
+      // Roles HQ eliminan al jugador directamente
       for (const entrada of orbatsAnteriores) {
         const nombre = entrada.nombre;
         const rol = entrada.rol.toLowerCase();
-        if (rolesResp.includes(rol) && nombre in resultadoPapeletas) {
-          resultadoPapeletas[nombre] = Math.max(0, resultadoPapeletas[nombre] - 1);
+        if (rolesHQ.includes(rol) && nombre in resultadoPapeletas) {
+          resultadoPapeletas[nombre] = 0;
+          justificaciones[nombre].push(`<span class="rolHQ">Rol HQ</span>`);
         }
       }
 
+      // Roles de responsabilidad restan -1 (si aún tiene papeletas)
+      for (const entrada of orbatsAnteriores) {
+        const nombre = entrada.nombre;
+        const rol = entrada.rol.toLowerCase();
+        if (
+          rolesResp.includes(rol) &&
+          nombre in resultadoPapeletas &&
+          resultadoPapeletas[nombre] > 0
+        ) {
+          resultadoPapeletas[nombre]--;
+          justificaciones[nombre].push(`<span class="resta">-1</span>`);
+        }
+      }
+
+      // Mostrar resultado con justificación
       const salida = Object.entries(resultadoPapeletas)
-        .map(([nombre, count]) => `${nombre} - ${count}`)
+        .map(([nombre, count]) => {
+          const detalles = justificaciones[nombre]?.join(" ") || "";
+          return `${nombre} - ${count} ${detalles}`;
+        })
         .join("\n");
 
-      document.getElementById("resultado").textContent = salida || "No hay jugadores.";
+      document.getElementById("resultado").innerHTML = salida || "No hay jugadores.";
       document.getElementById("ganador").textContent = "";
     }
 
