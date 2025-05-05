@@ -253,7 +253,7 @@ Líder de Sección</textarea>
       return jugadores;
     }
 
-    function sortear() {
+ function sortear() {
       const papeletas = [];
       for (const [nombre, count] of Object.entries(resultadoPapeletas)) {
         if (justificaciones[nombre]?.[0]?.includes('exento')) continue;
