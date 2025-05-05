@@ -56,6 +56,7 @@
       font-size: 20px;
       font-weight: bold;
       color: green;
+      min-height: 30px;
     }
     .rol-hq { color: red; font-weight: bold; }
     .rol-resp { color: goldenrod; }
@@ -67,6 +68,7 @@
 <body>
 
   <h1>Gestor de Papeletas - ORBAT</h1>
+
 
   <label for="orbat1">ORBAT 1</label>
   <textarea id="orbat1"></textarea>
@@ -97,7 +99,7 @@ Líder de Sección</textarea>
     <li><span class="rol-resp-4">🟣 Rol de responsabilidad en ORBAT 4</span>: eliminado por tener rol de responsabilidad directamente en el ORBAT base.</li>
     <li><span class="rol-resp">🟡 Rol de responsabilidad</span>: se resta 1 papeleta por cada vez que aparece en partidas anteriores con ese rol.</li>
     <li><span class="rol-ok">🟢 Rol neutral</span>: sin efecto sobre las papeletas.</li>
-    <li><span class="exento">⚪ Exento</span>: jugador excluido del sorteo por ser recluta o tener menos de 3 meses en el clan.</li>
+    <li><span class="exento">⚪ Exento</span>: jugador excluido del sorteo por ser recluta o tener menos de 3 meses como miembro.</li>
   </ul>
 
   <button onclick="analizar()">🔍 Analizar papeletas</button>
@@ -265,8 +267,27 @@ Líder de Sección</textarea>
         return;
       }
 
-      const ganador = papeletas[Math.floor(Math.random() * papeletas.length)];
-      document.getElementById("ganador").textContent = `🎉 Ganador: ${ganador}`;
+      let index = 0;
+      let delay = 50;
+      const maxDelay = 400;
+      const incremento = 1.15;
+      const total = papeletas.length;
+
+      const ganadorFinal = papeletas[Math.floor(Math.random() * total)];
+
+      function ruleta() {
+        const elegido = papeletas[index % total];
+        document.getElementById("ganador").textContent = `🎯 ${elegido}`;
+        index++;
+        delay *= incremento;
+        if (delay < maxDelay) {
+          setTimeout(ruleta, delay);
+        } else {
+          document.getElementById("ganador").textContent = `🎉 Ganador: ${ganadorFinal}`;
+        }
+      }
+
+      ruleta();
     }
   </script>
 
