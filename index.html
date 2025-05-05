@@ -64,6 +64,10 @@
     .rol-resp {
       color: goldenrod;
     }
+    .rol-resp-4 {
+      color: purple;
+      font-weight: bold;
+    }
     .rol-ok {
       color: darkgreen;
     }
@@ -86,10 +90,18 @@
   <textarea id="orbat4"></textarea>
 
   <label for="responsables">Roles de responsabilidad (uno por línea)</label>
-  <textarea id="responsables" placeholder="Ej: Teniente&#10;RTO&#10;TACP"></textarea>
+  <textarea id="responsables" placeholder="Ej: Teniente\nRTO\nTACP"></textarea>
 
   <label for="rolesHQ">Roles de HQ (eliminan todas las papeletas, uno por línea)</label>
-  <textarea id="rolesHQ" placeholder="Ej: Teniente&#10;Comandante"></textarea>
+  <textarea id="rolesHQ" placeholder="Ej: Teniente\nComandante"></textarea>
+
+  <h3>Leyenda de colores</h3>
+  <ul>
+    <li><span class="rol-hq">🔴 Rol HQ</span>: jugador eliminado por tener rol de HQ en una de las tres primeras partidas.</li>
+    <li><span class="rol-resp-4">🔸 Rol de responsabilidad en ORBAT 4</span>: eliminado por tener rol de responsabilidad directamente en el ORBAT base.</li>
+    <li><span class="rol-resp">🔱 Rol de responsabilidad</span>: se resta 1 papeleta por cada vez que aparece en partidas anteriores con ese rol.</li>
+    <li><span class="rol-ok">🔵 Rol neutral</span>: sin efecto sobre las papeletas.</li>
+  </ul>
 
   <button onclick="analizar()">🔍 Analizar papeletas</button>
   <pre id="resultado"></pre>
@@ -135,47 +147,52 @@
       todosLosRoles = {};
 
       for (const jugador of orbat4) {
-        resultadoPapeletas[jugador.nombre] = 4;
-        justificaciones[jugador.nombre] = [];
-        todosLosRoles[jugador.nombre] = new Set(); // Para guardar todos los roles encontrados
+        const rol = jugador.rol.trim();
+        const nombre = jugador.nombre;
+
+        resultadoPapeletas[nombre] = 4;
+        justificaciones[nombre] = [];
+        todosLosRoles[nombre] = new Set();
+
+        if (rolesResp.includes(rol.toLowerCase())) {
+          resultadoPapeletas[nombre] = 0;
+          justificaciones[nombre].push(`<span class="rol-resp-4">${rol}</span>`);
+        }
       }
 
       const orbatsAnteriores = [...orbat1, ...orbat2, ...orbat3];
 
-      // Roles HQ eliminan al jugador directamente
       for (const entrada of orbatsAnteriores) {
         const nombre = entrada.nombre;
         const rol = entrada.rol.trim();
-        if (nombre in resultadoPapeletas) {
-          todosLosRoles[nombre].add(rol);
-          if (rolesHQ.includes(rol.toLowerCase())) {
-            resultadoPapeletas[nombre] = 0;
-            justificaciones[nombre] = [`<span class="rol-hq">${rol}</span>`]; // solo ese motivo
-          }
+
+        if (!(nombre in resultadoPapeletas)) continue;
+
+        todosLosRoles[nombre].add(rol);
+
+        if (rolesHQ.includes(rol.toLowerCase())) {
+          resultadoPapeletas[nombre] = 0;
+          justificaciones[nombre] = [`<span class="rol-hq">${rol}</span>`];
         }
       }
 
-      // Roles de responsabilidad restan -1
       for (const entrada of orbatsAnteriores) {
         const nombre = entrada.nombre;
         const rol = entrada.rol.trim();
-        if (nombre in resultadoPapeletas) {
-          todosLosRoles[nombre].add(rol);
-          if (
-            rolesResp.includes(rol.toLowerCase()) &&
-            resultadoPapeletas[nombre] > 0
-          ) {
-            resultadoPapeletas[nombre]--;
-            justificaciones[nombre].push(`<span class="rol-resp">${rol}</span>`);
-          }
+
+        if (
+          nombre in resultadoPapeletas &&
+          rolesResp.includes(rol.toLowerCase()) &&
+          resultadoPapeletas[nombre] > 0
+        ) {
+          resultadoPapeletas[nombre]--;
+          justificaciones[nombre].push(`<span class="rol-resp">${rol}</span>`);
         }
       }
 
-      // Roles no penalizadores en verde
       for (const nombre in resultadoPapeletas) {
         const usados = new Set(
-          (justificaciones[nombre] || [])
-            .map(j => j.replace(/<[^>]*>/g, ""))
+          (justificaciones[nombre] || []).map(j => j.replace(/<[^>]*>/g, ""))
         );
         const verdes = [...(todosLosRoles[nombre] || [])]
           .filter(r => !usados.has(r))
