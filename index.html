@@ -90,17 +90,25 @@
   <textarea id="orbat4"></textarea>
 
   <label for="responsables">Roles de responsabilidad (uno por línea)</label>
-  <textarea id="responsables" placeholder="Ej: Teniente\nRTO\nTACP"></textarea>
+  <textarea id="responsables">Lider de escuadra
+Sargento
+RTO
+JTAC
+Lider de peloton
+Líder de Sección
+Médico
+Doctor
+Sanitario</textarea>
 
   <label for="rolesHQ">Roles de HQ (eliminan todas las papeletas, uno por línea)</label>
   <textarea id="rolesHQ" placeholder="Ej: Teniente\nComandante"></textarea>
 
   <h3>Leyenda de colores</h3>
   <ul>
-    <li><span class="rol-hq">Rol HQ</span>: jugador eliminado por tener rol de HQ en una de las tres primeras partidas.</li>
-    <li><span class="rol-resp-4">Rol de responsabilidad en ORBAT 4</span>: eliminado por tener rol de responsabilidad directamente en el ORBAT base.</li>
-    <li><span class="rol-resp">Rol de responsabilidad</span>: se resta 1 papeleta por cada vez que aparece en partidas anteriores con ese rol.</li>
-    <li><span class="rol-ok">Rol neutral</span>: sin efecto sobre las papeletas.</li>
+    <li><span class="rol-hq">🔴 Rol HQ</span>: jugador eliminado por tener rol de HQ en una de las tres primeras partidas.</li>
+    <li><span class="rol-resp-4">🔸 Rol de responsabilidad en ORBAT 4</span>: eliminado por tener rol de responsabilidad directamente en el ORBAT base.</li>
+    <li><span class="rol-resp">🔱 Rol de responsabilidad</span>: se resta 1 papeleta por cada vez que aparece en partidas anteriores con ese rol.</li>
+    <li><span class="rol-ok">🔵 Rol neutral</span>: sin efecto sobre las papeletas.</li>
   </ul>
 
   <button onclick="analizar()">🔍 Analizar papeletas</button>
