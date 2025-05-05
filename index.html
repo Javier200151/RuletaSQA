@@ -187,7 +187,9 @@ Líder de Sección</textarea>
 
         if (!(nombre in resultadoPapeletas)) continue;
 
-        todosLosRoles[nombre].add(rol);
+        if (todosLosRoles[nombre]) {
+          todosLosRoles[nombre].add(rol);
+        }
 
         if (rolesHQ.includes(rol.toLowerCase())) {
           resultadoPapeletas[nombre] = 0;
