@@ -253,42 +253,43 @@ Líder de Sección</textarea>
       return jugadores;
     }
 
- function sortear() {
-      const papeletas = [];
-      for (const [nombre, count] of Object.entries(resultadoPapeletas)) {
-        if (justificaciones[nombre]?.[0]?.includes('exento')) continue;
-        for (let i = 0; i < count; i++) {
-          papeletas.push(nombre);
-        }
-      }
+	function sortear() {
+		  const papeletas = [];
+		  for (const [nombre, count] of Object.entries(resultadoPapeletas)) {
+			if (justificaciones[nombre]?.[0]?.includes('exento')) continue;
+			for (let i = 0; i < count; i++) {
+			  papeletas.push(nombre);
+			}
+		  }
 
-      if (papeletas.length === 0) {
-        document.getElementById("ganador").textContent = "🎲 No hay papeletas suficientes.";
-        return;
-      }
+		  if (papeletas.length === 0) {
+			document.getElementById("ganador").textContent = "🎲 No hay papeletas suficientes.";
+			return;
+		  }
 
-      let index = 0;
-      let delay = 50;
-      const maxDelay = 400;
-      const incremento = 1.15;
-      const total = papeletas.length;
+		  let index = 0;
+		  let delay = 20;
+		  const maxDelay = 1000;
+		  const incremento = 1.1;
+		  const total = papeletas.length;
+		  const ganadorFinal = papeletas[Math.floor(Math.random() * total)];
 
-      const ganadorFinal = papeletas[Math.floor(Math.random() * total)];
+		  function ruleta() {
+			const elegido = papeletas[index % total];
+			document.getElementById("ganador").textContent = `🎯 ${elegido}`;
+			index++;
+			delay *= incremento;
+			if (delay < maxDelay) {
+			  setTimeout(ruleta, delay);
+			} else {
+			  setTimeout(() => {
+				document.getElementById("ganador").textContent = `🎉 Ganador: ${ganadorFinal}`;
+			  }, 500);
+			}
+		  }
 
-      function ruleta() {
-        const elegido = papeletas[index % total];
-        document.getElementById("ganador").textContent = `🎯 ${elegido}`;
-        index++;
-        delay *= incremento;
-        if (delay < maxDelay) {
-          setTimeout(ruleta, delay);
-        } else {
-          document.getElementById("ganador").textContent = `🎉 Ganador: ${ganadorFinal}`;
-        }
-      }
-
-      ruleta();
-    }
+		  ruleta();
+		}
   </script>
 
 </body>
