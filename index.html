@@ -64,6 +64,9 @@
     .rol-resp {
       color: goldenrod;
     }
+    .rol-ok {
+      color: darkgreen;
+    }
   </style>
 </head>
 <body>
@@ -97,6 +100,7 @@
   <script>
     let resultadoPapeletas = {};
     let justificaciones = {};
+    let todosLosRoles = {};
 
     function extraerJugadores(orbatText) {
       const regex = /([^\n-]+)\s*\([^)]+\)-([^\n]+)/g;
@@ -128,10 +132,12 @@
 
       resultadoPapeletas = {};
       justificaciones = {};
+      todosLosRoles = {};
 
       for (const jugador of orbat4) {
         resultadoPapeletas[jugador.nombre] = 4;
         justificaciones[jugador.nombre] = [];
+        todosLosRoles[jugador.nombre] = new Set(); // Para guardar todos los roles encontrados
       }
 
       const orbatsAnteriores = [...orbat1, ...orbat2, ...orbat3];
@@ -140,9 +146,12 @@
       for (const entrada of orbatsAnteriores) {
         const nombre = entrada.nombre;
         const rol = entrada.rol.trim();
-        if (rolesHQ.includes(rol.toLowerCase()) && nombre in resultadoPapeletas) {
-          resultadoPapeletas[nombre] = 0;
-          justificaciones[nombre] = [`<span class="rol-hq">${rol}</span>`]; // solo ese motivo
+        if (nombre in resultadoPapeletas) {
+          todosLosRoles[nombre].add(rol);
+          if (rolesHQ.includes(rol.toLowerCase())) {
+            resultadoPapeletas[nombre] = 0;
+            justificaciones[nombre] = [`<span class="rol-hq">${rol}</span>`]; // solo ese motivo
+          }
         }
       }
 
@@ -150,14 +159,28 @@
       for (const entrada of orbatsAnteriores) {
         const nombre = entrada.nombre;
         const rol = entrada.rol.trim();
-        if (
-          rolesResp.includes(rol.toLowerCase()) &&
-          nombre in resultadoPapeletas &&
-          resultadoPapeletas[nombre] > 0
-        ) {
-          resultadoPapeletas[nombre]--;
-          justificaciones[nombre].push(`<span class="rol-resp">${rol}</span>`);
+        if (nombre in resultadoPapeletas) {
+          todosLosRoles[nombre].add(rol);
+          if (
+            rolesResp.includes(rol.toLowerCase()) &&
+            resultadoPapeletas[nombre] > 0
+          ) {
+            resultadoPapeletas[nombre]--;
+            justificaciones[nombre].push(`<span class="rol-resp">${rol}</span>`);
+          }
         }
+      }
+
+      // Roles no penalizadores en verde
+      for (const nombre in resultadoPapeletas) {
+        const usados = new Set(
+          (justificaciones[nombre] || [])
+            .map(j => j.replace(/<[^>]*>/g, ""))
+        );
+        const verdes = [...(todosLosRoles[nombre] || [])]
+          .filter(r => !usados.has(r))
+          .map(r => `<span class="rol-ok">${r}</span>`);
+        justificaciones[nombre].push(...verdes);
       }
 
       const salida = Object.entries(resultadoPapeletas)
