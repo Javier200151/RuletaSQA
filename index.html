@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestor de Papeletas - ORBAT</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    textarea { width: 100%; height: 100px; margin-bottom: 10px; }
+    button { margin: 10px 0; padding: 10px 20px; }
+    pre { background: #f4f4f4; padding: 10px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+
+  <h1>Gestor de Papeletas</h1>
+
+  <h3>ORBAT 1</h3>
+  <textarea id="orbat1"></textarea>
+
+  <h3>ORBAT 2</h3>
+  <textarea id="orbat2"></textarea>
+
+  <h3>ORBAT 3</h3>
+  <textarea id="orbat3"></textarea>
+
+  <h3>ORBAT 4 (Base del sorteo)</h3>
+  <textarea id="orbat4"></textarea>
+
+  <h3>Roles de responsabilidad (uno por línea)</h3>
+  <textarea id="responsables"></textarea>
+
+  <button onclick="analizar()">Analizar papeletas</button>
+  <pre id="resultado"></pre>
+
+  <button onclick="sortear()">🎲 Hacer sorteo</button>
+  <pre id="ganador"></pre>
+
+  <script>
+    let resultadoPapeletas = {};
+
+    function extraerJugadores(orbatText) {
+      const regex = /([^\n-]+)\s*\([^)]+\)-([^\n]+)/g;
+      const jugadores = [];
+      let match;
+      while ((match = regex.exec(orbatText)) !== null) {
+        const rol = match[1].trim();
+        const nombre = match[2].trim();
+        if (nombre) jugadores.push({ rol, nombre });
+      }
+      return jugadores;
+    }
+
+    function analizar() {
+      const orbat1 = extraerJugadores(document.getElementById("orbat1").value);
+      const orbat2 = extraerJugadores(document.getElementById("orbat2").value);
+      const orbat3 = extraerJugadores(document.getElementById("orbat3").value);
+      const orbat4 = extraerJugadores(document.getElementById("orbat4").value);
+
+      const rolesResp = document.getElementById("responsables").value
+        .split("\n")
+        .map(r => r.trim().toLowerCase())
+        .filter(r => r);
+
+      resultadoPapeletas = {};
+      for (const jugador of orbat4) {
+        resultadoPapeletas[jugador.nombre] = 4;
+      }
+
+      const orbatsAnteriores = [...orbat1, ...orbat2, ...orbat3];
+      for (const entrada of orbatsAnteriores) {
+        const nombre = entrada.nombre;
+        const rol = entrada.rol.toLowerCase();
+        if (rolesResp.includes(rol) && nombre in resultadoPapeletas) {
+          resultadoPapeletas[nombre] = Math.max(0, resultadoPapeletas[nombre] - 1);
+        }
+      }
+
+      const salida = Object.entries(resultadoPapeletas)
+        .map(([nombre, count]) => `${nombre} - ${count}`)
+        .join("\n");
+
+      document.getElementById("resultado").textContent = salida || "No hay jugadores.";
+      document.getElementById("ganador").textContent = "";
+    }
+
+    function sortear() {
+      const papeletas = [];
+      for (const [nombre, count] of Object.entries(resultadoPapeletas)) {
+        for (let i = 0; i < count; i++) {
+          papeletas.push(nombre);
+        }
+      }
+
+      if (papeletas.length === 0) {
+        document.getElementById("ganador").textContent = "🎲 No hay papeletas suficientes.";
+        return;
+      }
+
+      const ganador = papeletas[Math.floor(Math.random() * papeletas.length)];
+      document.getElementById("ganador").textContent = `🎉 Ganador: ${ganador}`;
+    }
+  </script>
+
+</body>
+</html>
