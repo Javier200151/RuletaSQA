@@ -57,20 +57,11 @@
       font-weight: bold;
       color: green;
     }
-    .rol-hq {
-      color: red;
-      font-weight: bold;
-    }
-    .rol-resp {
-      color: goldenrod;
-    }
-    .rol-resp-4 {
-      color: purple;
-      font-weight: bold;
-    }
-    .rol-ok {
-      color: darkgreen;
-    }
+    .rol-hq { color: red; font-weight: bold; }
+    .rol-resp { color: goldenrod; }
+    .rol-resp-4 { color: purple; font-weight: bold; }
+    .rol-ok { color: darkgreen; }
+    .exento { color: gray; font-style: italic; }
   </style>
 </head>
 <body>
@@ -95,20 +86,18 @@ Sargento
 RTO
 JTAC
 Lider de peloton
-Líder de Sección
-Médico
-Doctor
-Sanitario</textarea>
+Líder de Sección</textarea>
 
   <label for="rolesHQ">Roles de HQ (eliminan todas las papeletas, uno por línea)</label>
   <textarea id="rolesHQ" placeholder="Ej: Teniente\nComandante"></textarea>
 
   <h3>Leyenda de colores</h3>
   <ul>
-    <li><span class="rol-hq">Rol HQ</span>: jugador eliminado por tener rol de HQ en una de las tres primeras partidas.</li>
-    <li><span class="rol-resp-4">Rol de responsabilidad en ORBAT 4</span>: eliminado por tener rol de responsabilidad directamente en el ORBAT base.</li>
-    <li><span class="rol-resp">Rol de responsabilidad</span>: se resta 1 papeleta por cada vez que aparece en partidas anteriores con ese rol.</li>
-    <li><span class="rol-ok">Rol neutral</span>: sin efecto sobre las papeletas.</li>
+    <li><span class="rol-hq">🔴 Rol HQ</span>: jugador eliminado por tener rol de HQ en una de las tres primeras partidas.</li>
+    <li><span class="rol-resp-4">🟣 Rol de responsabilidad en ORBAT 4</span>: eliminado por tener rol de responsabilidad directamente en el ORBAT base.</li>
+    <li><span class="rol-resp">🟡 Rol de responsabilidad</span>: se resta 1 papeleta por cada vez que aparece en partidas anteriores con ese rol.</li>
+    <li><span class="rol-ok">🟢 Rol neutral</span>: sin efecto sobre las papeletas.</li>
+    <li><span class="exento">⚪ Exento</span>: jugador excluido del sorteo por ser recluta o tener menos de 3 meses en el clan.</li>
   </ul>
 
   <button onclick="analizar()">🔍 Analizar papeletas</button>
@@ -121,20 +110,35 @@ Sanitario</textarea>
     let resultadoPapeletas = {};
     let justificaciones = {};
     let todosLosRoles = {};
+    let miembrosClan = {};
 
-    function extraerJugadores(orbatText) {
-      const regex = /([^\n-]+)\s*\([^)]+\)-([^\n]+)/g;
-      const jugadores = [];
-      let match;
-      while ((match = regex.exec(orbatText)) !== null) {
-        const rol = match[1].trim();
-        const nombre = match[2].trim();
-        if (nombre) jugadores.push({ rol, nombre });
+    async function obtenerMiembros() {
+      const response = await fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vTuQORinglzn8kO3ywB2K6YYDZJCgaEWwBUlhNhBbg7uEyyku8tC7sCN1Um1BgFyT_oqqvqL-4IKROB/pub?gid=259895026&single=true&output=csv');
+      const data = await response.text();
+      const lines = data.trim().split('\n');
+
+      for (let i = 1; i < lines.length; i++) {
+        const [nombre, fecha] = lines[i].split(',');
+        if (nombre && fecha) {
+          miembrosClan[nombre.trim()] = new Date(fecha.trim());
+        }
       }
-      return jugadores;
     }
 
-    function analizar() {
+    function esExento(nombre) {
+      const fechaIncorporacion = miembrosClan[nombre];
+      const hoy = new Date();
+      const tresMesesAtras = new Date();
+      tresMesesAtras.setMonth(hoy.getMonth() - 3);
+
+      if (!fechaIncorporacion) return 'Exento por recluta';
+      if (fechaIncorporacion > tresMesesAtras) return 'Exento por tiempo';
+      return null;
+    }
+
+    async function analizar() {
+      await obtenerMiembros();
+
       const orbat1 = extraerJugadores(document.getElementById("orbat1").value);
       const orbat2 = extraerJugadores(document.getElementById("orbat2").value);
       const orbat3 = extraerJugadores(document.getElementById("orbat3").value);
@@ -157,6 +161,13 @@ Sanitario</textarea>
       for (const jugador of orbat4) {
         const rol = jugador.rol.trim();
         const nombre = jugador.nombre;
+
+        const exencion = esExento(nombre);
+        if (exencion) {
+          resultadoPapeletas[nombre] = 0;
+          justificaciones[nombre] = [`<span class='exento'>${exencion}</span>`];
+          continue;
+        }
 
         resultadoPapeletas[nombre] = 4;
         justificaciones[nombre] = [];
@@ -199,6 +210,7 @@ Sanitario</textarea>
       }
 
       for (const nombre in resultadoPapeletas) {
+        if (justificaciones[nombre]?.[0]?.includes('exento')) continue;
         const usados = new Set(
           (justificaciones[nombre] || []).map(j => j.replace(/<[^>]*>/g, ""))
         );
@@ -212,7 +224,7 @@ Sanitario</textarea>
         .map(([nombre, count]) => {
           const motivos = justificaciones[nombre]?.join(", ");
           return motivos
-            ? `${nombre} - ${count} (${motivos})`
+            ? `<span class="${motivos.includes('exento') ? 'exento' : ''}">${nombre} - ${count} (${motivos})</span>`
             : `${nombre} - ${count}`;
         })
         .join("\n");
@@ -221,9 +233,22 @@ Sanitario</textarea>
       document.getElementById("ganador").textContent = "";
     }
 
+    function extraerJugadores(orbatText) {
+      const regex = /([^\n-]+)\s*\([^)]+\)-([^\n]+)/g;
+      const jugadores = [];
+      let match;
+      while ((match = regex.exec(orbatText)) !== null) {
+        const rol = match[1].trim();
+        const nombre = match[2].trim();
+        if (nombre) jugadores.push({ rol, nombre });
+      }
+      return jugadores;
+    }
+
     function sortear() {
       const papeletas = [];
       for (const [nombre, count] of Object.entries(resultadoPapeletas)) {
+        if (justificaciones[nombre]?.[0]?.includes('exento')) continue;
         for (let i = 0; i < count; i++) {
           papeletas.push(nombre);
         }
