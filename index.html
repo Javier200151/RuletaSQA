@@ -57,6 +57,13 @@
       font-weight: bold;
       color: green;
     }
+    .rol-hq {
+      color: red;
+      font-weight: bold;
+    }
+    .rol-resp {
+      color: goldenrod;
+    }
   </style>
 </head>
 <body>
@@ -135,11 +142,11 @@
         const rol = entrada.rol.trim();
         if (rolesHQ.includes(rol.toLowerCase()) && nombre in resultadoPapeletas) {
           resultadoPapeletas[nombre] = 0;
-          justificaciones[nombre] = [rol]; // Solo ese motivo
+          justificaciones[nombre] = [`<span class="rol-hq">${rol}</span>`]; // solo ese motivo
         }
       }
 
-      // Roles de responsabilidad restan -1 (si aún tiene papeletas)
+      // Roles de responsabilidad restan -1
       for (const entrada of orbatsAnteriores) {
         const nombre = entrada.nombre;
         const rol = entrada.rol.trim();
@@ -149,7 +156,7 @@
           resultadoPapeletas[nombre] > 0
         ) {
           resultadoPapeletas[nombre]--;
-          justificaciones[nombre].push(rol);
+          justificaciones[nombre].push(`<span class="rol-resp">${rol}</span>`);
         }
       }
 
