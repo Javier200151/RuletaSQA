@@ -67,16 +67,20 @@
   <h1>Gestor de Papeletas - ORBAT</h1>
 
   <label for="orbat1">ORBAT 1</label>
-  <select id="orbat1"></select>
+<select id="orbat1"></select>
+<pre id="vista_orbat1"></pre>
 
   <label for="orbat2">ORBAT 2</label>
-  <select id="orbat2"></select>
+<select id="orbat2"></select>
+<pre id="vista_orbat2"></pre>
 
   <label for="orbat3">ORBAT 3</label>
-  <select id="orbat3"></select>
+<select id="orbat3"></select>
+<pre id="vista_orbat3"></pre>
 
   <label for="orbat4">ORBAT 4</label>
-  <select id="orbat4"></select>
+<select id="orbat4"></select>
+<pre id="vista_orbat4"></pre>
 
   <button onclick="cargarOrbats()">📥 Cargar ORBATs seleccionados</button>
   <pre id="carga"></pre>
@@ -136,9 +140,11 @@
       const ids = ['orbat1', 'orbat2', 'orbat3', 'orbat4'];
       document.getElementById("carga").textContent = 'Cargando...';
       for (const id of ids) {
-        const url = document.getElementById(id).value;
-        orbatTexts[id] = await obtenerContenidoORBAT(url);
-      }
+  const url = document.getElementById(id).value;
+  const texto = await obtenerContenidoORBAT(url);
+  orbatTexts[id] = texto;
+  document.getElementById('vista_' + id).textContent = texto;
+}
       document.getElementById("carga").textContent = 'ORBATs cargados correctamente';
     }
 
