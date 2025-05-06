@@ -187,7 +187,6 @@
           jugadores[nombre].razones.push(`<span class='rol-resp'>${rol}</span>`);
         }
       }
-
       const salida = Object.entries(jugadores).map(([nombre, obj]) => {
         const verdes = [...obj.roles].filter(r => !obj.razones.includes(r)).map(r => `<span class='rol-ok'>${r}</span>`);
         return `${nombre} - ${obj.papeletas} (${[...obj.razones, ...verdes].join(', ')})`;
