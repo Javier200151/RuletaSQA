@@ -14,16 +14,13 @@
       text-align: center;
       color: #333;
     }
-    textarea {
-      width:  100%;
-      height: 120px;
+    select, textarea {
+      width: 100%;
       margin-bottom: 15px;
       padding: 10px;
-      font-family: monospace;
       font-size: 14px;
       border: 1px solid #ccc;
       border-radius: 5px;
-      background: #fff;
     }
     label {
       font-weight: bold;
@@ -69,38 +66,20 @@
 
   <h1>Gestor de Papeletas - ORBAT</h1>
 
-
   <label for="orbat1">ORBAT 1</label>
-  <textarea id="orbat1"></textarea>
+  <select id="orbat1"></select>
 
   <label for="orbat2">ORBAT 2</label>
-  <textarea id="orbat2"></textarea>
+  <select id="orbat2"></select>
 
   <label for="orbat3">ORBAT 3</label>
-  <textarea id="orbat3"></textarea>
+  <select id="orbat3"></select>
 
-  <label for="orbat4">ORBAT A JUGAR</label>
-  <textarea id="orbat4"></textarea>
+  <label for="orbat4">ORBAT 4</label>
+  <select id="orbat4"></select>
 
-  <label for="responsables">Roles de responsabilidad (uno por línea)</label>
-  <textarea id="responsables">Lider de escuadra
-Sargento
-RTO
-JTAC
-Lider de peloton
-Líder de Sección</textarea>
-
-  <label for="rolesHQ">Roles de HQ (uno por línea)</label>
-  <textarea id="rolesHQ"></textarea>
-
-  <h3>Leyenda de colores</h3>
-  <ul>
-    <li><span class="rol-hq">🔴 Rol HQ</span>: jugador eliminado por tener rol de HQ en una de las tres primeras partidas.</li>
-    <li><span class="rol-resp-4">🟣 Rol de responsabilidad en ORBAT a jugar</span>: eliminado por tener rol de responsabilidad directamente en el ORBAT base.</li>
-    <li><span class="rol-resp">🟡 Rol de responsabilidad</span>: se resta 1 papeleta por cada vez que aparece en partidas anteriores con ese rol.</li>
-    <li><span class="rol-ok">🟢 Rol neutral</span>: sin efecto sobre las papeletas.</li>
-    <li><span class="exento">⚪ Exento</span>: jugador excluido del sorteo por ser recluta o tener menos de 3 meses como miembro.</li>
-  </ul>
+  <button onclick="cargarOrbats()">📥 Cargar ORBATs seleccionados</button>
+  <pre id="carga"></pre>
 
   <button onclick="analizar()">🔍 Analizar papeletas</button>
   <pre id="resultado"></pre>
@@ -109,187 +88,55 @@ Líder de Sección</textarea>
   <pre id="ganador" class="ganador"></pre>
 
   <script>
-    let resultadoPapeletas = {};
-    let justificaciones = {};
-    let todosLosRoles = {};
-    let miembrosClan = {};
-
-    function normalizar(texto) {
-      return texto.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+    let orbatTexts = {};
+    async function obtenerTemas() {
+      const response = await fetch('https://corsproxy.io/?https://foro.squadalpha.es/viewforum.php?f=18');
+      const text = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(text, 'text/html');
+      const enlaces = Array.from(doc.querySelectorAll('a.topictitle'));
+      const temas = enlaces
+        .filter(enlace => /VIERNES|MARTES/i.test(enlace.textContent))
+        .map(enlace => ({
+          titulo: enlace.textContent.trim(),
+          url: enlace.href.startsWith('http') ? enlace.href : 'https://foro.squadalpha.es/' + enlace.getAttribute('href')
+        }));
+      return temas;
     }
 
-    async function obtenerMiembros() {
-      const response = await fetch('https://corsproxy.io/?https://docs.google.com/spreadsheets/d/e/2PACX-1vTuQORinglzn8kO3ywB2K6YYDZJCgaEWwBUlhNhBbg7uEyyku8tC7sCN1Um1BgFyT_oqqvqL-4IKROB/pub?gid=259895026&single=true&output=csv');
-      const data = await response.text();
-      const lines = data.trim().split('\n');
-
-      for (let i = 1; i < lines.length; i++) {
-        const [nombre, fecha] = lines[i].split(',');
-        if (nombre && fecha) {
-          miembrosClan[normalizar(nombre.trim())] = new Date(fecha.trim());
-        }
-      }
+    async function llenarMenus() {
+      const temas = await obtenerTemas();
+      ['orbat1', 'orbat2', 'orbat3', 'orbat4'].forEach(id => {
+        const select = document.getElementById(id);
+        temas.forEach(tema => {
+          const option = document.createElement('option');
+          option.value = tema.url;
+          option.textContent = tema.titulo;
+          select.appendChild(option);
+        });
+      });
     }
 
-    function esExento(nombre) {
-      const fechaIncorporacion = miembrosClan[normalizar(nombre)];
-      const hoy = new Date();
-      const tresMesesAtras = new Date();
-      tresMesesAtras.setMonth(hoy.getMonth() - 3);
-
-      if (!fechaIncorporacion) return 'Exento por recluta';
-      if (fechaIncorporacion > tresMesesAtras) return 'Exento por tiempo';
-      return null;
+    async function obtenerContenidoORBAT(url) {
+      const response = await fetch(`https://corsproxy.io/?${url}`);
+      const text = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(text, 'text/html');
+      const bbquote = doc.querySelector('textarea');
+      return bbquote ? bbquote.textContent : '';
     }
 
-    async function analizar() {
-      await obtenerMiembros();
-
-      const orbat1 = extraerJugadores(document.getElementById("orbat1").value);
-      const orbat2 = extraerJugadores(document.getElementById("orbat2").value);
-      const orbat3 = extraerJugadores(document.getElementById("orbat3").value);
-      const orbat4 = extraerJugadores(document.getElementById("orbat4").value);
-
-      const rolesResp = document.getElementById("responsables").value
-        .split("\n")
-        .map(r => normalizar(r))
-        .filter(r => r);
-
-      const rolesHQ = document.getElementById("rolesHQ").value
-        .split("\n")
-        .map(r => normalizar(r))
-        .filter(r => r);
-
-      resultadoPapeletas = {};
-      justificaciones = {};
-      todosLosRoles = {};
-
-      for (const jugador of orbat4) {
-        const rol = jugador.rol.trim();
-        const nombre = jugador.nombre;
-
-        const exencion = esExento(nombre);
-        if (exencion) {
-          resultadoPapeletas[nombre] = 0;
-          justificaciones[nombre] = [`<span class='exento'>${exencion}</span>`];
-          continue;
-        }
-
-        resultadoPapeletas[nombre] = 4;
-        justificaciones[nombre] = [];
-        todosLosRoles[nombre] = new Set();
-
-        if (rolesResp.includes(normalizar(rol))) {
-          resultadoPapeletas[nombre] = 0;
-          justificaciones[nombre].push(`<span class="rol-resp-4">${rol}</span>`);
-        }
+    async function cargarOrbats() {
+      const ids = ['orbat1', 'orbat2', 'orbat3', 'orbat4'];
+      document.getElementById("carga").textContent = 'Cargando...';
+      for (const id of ids) {
+        const url = document.getElementById(id).value;
+        orbatTexts[id] = await obtenerContenidoORBAT(url);
       }
-
-      const orbatsAnteriores = [...orbat1, ...orbat2, ...orbat3];
-
-      for (const entrada of orbatsAnteriores) {
-        const nombre = entrada.nombre;
-        const rol = entrada.rol.trim();
-
-        if (!(nombre in resultadoPapeletas)) continue;
-
-        if (todosLosRoles[nombre]) {
-          todosLosRoles[nombre].add(rol);
-        }
-
-        if (rolesHQ.includes(normalizar(rol))) {
-          resultadoPapeletas[nombre] = 0;
-          justificaciones[nombre] = [`<span class="rol-hq">${rol}</span>`];
-        }
-      }
-
-      for (const entrada of orbatsAnteriores) {
-        const nombre = entrada.nombre;
-        const rol = entrada.rol.trim();
-
-        if (
-          nombre in resultadoPapeletas &&
-          rolesResp.includes(normalizar(rol)) &&
-          resultadoPapeletas[nombre] > 0
-        ) {
-          resultadoPapeletas[nombre]--;
-          justificaciones[nombre].push(`<span class="rol-resp">${rol}</span>`);
-        }
-      }
-
-      for (const nombre in resultadoPapeletas) {
-        if (justificaciones[nombre]?.[0]?.includes('exento')) continue;
-        const usados = new Set(
-          (justificaciones[nombre] || []).map(j => j.replace(/<[^>]*>/g, ""))
-        );
-        const verdes = [...(todosLosRoles[nombre] || [])]
-          .filter(r => !usados.has(r))
-          .map(r => `<span class="rol-ok">${r}</span>`);
-        justificaciones[nombre].push(...verdes);
-      }
-
-      const salida = Object.entries(resultadoPapeletas)
-        .map(([nombre, count]) => {
-          const motivos = justificaciones[nombre]?.join(", ");
-          return motivos
-            ? `<span class="${motivos.includes('exento') ? 'exento' : ''}">${nombre} - ${count} (${motivos})</span>`
-            : `${nombre} - ${count}`;
-        })
-        .join("\n");
-
-      document.getElementById("resultado").innerHTML = salida || "No hay jugadores.";
-      document.getElementById("ganador").textContent = "";
+      document.getElementById("carga").textContent = 'ORBATs cargados correctamente';
     }
 
-    function extraerJugadores(orbatText) {
-      const regex = /([^\n-]+)\s*\([^)]+\)-([^\n]+)/g;
-      const jugadores = [];
-      let match;
-      while ((match = regex.exec(orbatText)) !== null) {
-        const rol = match[1].trim();
-        const nombre = match[2].trim();
-        if (nombre) jugadores.push({ rol, nombre });
-      }
-      return jugadores;
-    }
-
-	function sortear() {
-		  const papeletas = [];
-		  for (const [nombre, count] of Object.entries(resultadoPapeletas)) {
-			if (justificaciones[nombre]?.[0]?.includes('exento')) continue;
-			for (let i = 0; i < count; i++) {
-			  papeletas.push(nombre);
-			}
-		  }
-
-		  if (papeletas.length === 0) {
-			document.getElementById("ganador").textContent = "🎲 No hay papeletas suficientes.";
-			return;
-		  }
-
-		  let index = 0;
-		  let delay = 20;
-		  const maxDelay = 1000;
-		  const incremento = 1.1;
-		  const total = papeletas.length;
-		  const ganadorFinal = papeletas[Math.floor(Math.random() * total)];
-
-		  function ruleta() {
-			const elegido = papeletas[index % total];
-			document.getElementById("ganador").textContent = `🎯 ${elegido}`;
-			index++;
-			delay *= incremento;
-			if (delay < maxDelay) {
-			  setTimeout(ruleta, delay);
-			} else {
-			  setTimeout(() => {
-				document.getElementById("ganador").textContent = `🎉 Ganador: ${ganadorFinal}`;
-			  }, 500);
-			}
-		  }
-
-		  ruleta();
-		}
+    llenarMenus();
   </script>
 
 </body>
