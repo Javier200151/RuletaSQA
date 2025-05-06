@@ -122,8 +122,14 @@
       const text = await response.text();
       const parser = new DOMParser();
       const doc = parser.parseFromString(text, 'text/html');
-      const bbquote = doc.querySelector('textarea');
-      return bbquote ? bbquote.textContent : '';
+      const post = doc.querySelector('.content');
+      if (!post) return '';
+      const raw = post.textContent;
+      const secciones = raw.split('---');
+      if (secciones.length >= 3) {
+        return secciones[1].trim(); // contenido entre los dos primeros ---
+      }
+      return raw.trim();
     }
 
     async function cargarOrbats() {
