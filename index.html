@@ -103,7 +103,8 @@
         .filter(enlace => /VIERNES|MARTES/i.test(enlace.textContent))
         .map(enlace => ({
           titulo: enlace.textContent.trim(),
-          url: enlace.href.startsWith('http') ? enlace.href : 'https://foro.squadalpha.es/' + enlace.getAttribute('href')
+          url: new URL(enlace.getAttribute('href'), 'https://foro.squadalpha.es').href
+
         }));
       return temas;
     }
