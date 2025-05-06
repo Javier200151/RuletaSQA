@@ -16,7 +16,7 @@
     }
     select, textarea {
       width: 100%;
-      margin-bottom: 15px;
+      margin-bottom: 5px;
       padding: 10px;
       font-size: 14px;
       border: 1px solid #ccc;
@@ -33,7 +33,7 @@
       color: white;
       padding: 12px 25px;
       font-size: 16px;
-      margin: 15px 0;
+      margin: 10px 5px 20px 0;
       border-radius: 5px;
       cursor: pointer;
     }
@@ -66,21 +66,27 @@
 
   <h1>Gestor de Papeletas - ORBAT</h1>
 
-  <label for="orbat1">ORBAT 1</label>
-<select id="orbat1"></select>
-<pre id="vista_orbat1"></pre>
+  <div>
+    <label for="orbat1">ORBAT 1</label>
+    <select id="orbat1"></select>
+    <button onclick="toggle('vista_orbat1')">👁️</button>
+    <pre id="vista_orbat1" style="display:none"></pre>
 
-  <label for="orbat2">ORBAT 2</label>
-<select id="orbat2"></select>
-<pre id="vista_orbat2"></pre>
+    <label for="orbat2">ORBAT 2</label>
+    <select id="orbat2"></select>
+    <button onclick="toggle('vista_orbat2')">👁️</button>
+    <pre id="vista_orbat2" style="display:none"></pre>
 
-  <label for="orbat3">ORBAT 3</label>
-<select id="orbat3"></select>
-<pre id="vista_orbat3"></pre>
+    <label for="orbat3">ORBAT 3</label>
+    <select id="orbat3"></select>
+    <button onclick="toggle('vista_orbat3')">👁️</button>
+    <pre id="vista_orbat3" style="display:none"></pre>
 
-  <label for="orbat4">ORBAT 4</label>
-<select id="orbat4"></select>
-<pre id="vista_orbat4"></pre>
+    <label for="orbat4">ORBAT 4</label>
+    <select id="orbat4"></select>
+    <button onclick="toggle('vista_orbat4')">👁️</button>
+    <pre id="vista_orbat4" style="display:none"></pre>
+  </div>
 
   <button onclick="cargarOrbats()">📥 Cargar ORBATs seleccionados</button>
   <pre id="carga"></pre>
@@ -93,6 +99,7 @@
 
   <script>
     let orbatTexts = {};
+
     async function obtenerTemas() {
       const response = await fetch('https://corsproxy.io/?https://foro.squadalpha.es/viewforum.php?f=18');
       const text = await response.text();
@@ -104,7 +111,6 @@
         .map(enlace => ({
           titulo: enlace.textContent.trim(),
           url: new URL(enlace.getAttribute('href'), 'https://foro.squadalpha.es').href
-
         }));
       return temas;
     }
@@ -132,7 +138,7 @@
       const raw = post.textContent;
       const secciones = raw.split('---');
       if (secciones.length >= 3) {
-        return secciones[1].trim(); // contenido entre los dos primeros ---
+        return secciones[1].trim();
       }
       return raw.trim();
     }
@@ -141,12 +147,54 @@
       const ids = ['orbat1', 'orbat2', 'orbat3', 'orbat4'];
       document.getElementById("carga").textContent = 'Cargando...';
       for (const id of ids) {
-  const url = document.getElementById(id).value;
-  const texto = await obtenerContenidoORBAT(url);
-  orbatTexts[id] = texto;
-  document.getElementById('vista_' + id).textContent = texto;
-}
+        const url = document.getElementById(id).value;
+        const texto = await obtenerContenidoORBAT(url);
+        orbatTexts[id] = texto;
+        const vista = document.getElementById('vista_' + id);
+        vista.textContent = texto;
+        vista.style.display = 'block';
+      }
       document.getElementById("carga").textContent = 'ORBATs cargados correctamente';
+    }
+
+    function toggle(id) {
+      const el = document.getElementById(id);
+      el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function analizar() {
+      const orbat1 = orbatTexts['orbat1'] || '';
+      const orbat2 = orbatTexts['orbat2'] || '';
+      const orbat3 = orbatTexts['orbat3'] || '';
+      const orbat4 = orbatTexts['orbat4'] || '';
+
+      const jugadores = {};
+      const extraer = texto => {
+        return [...texto.matchAll(/([^\n-]+)\s*\([^)]+\)-([^\n]+)/g)].map(m => ({ rol: m[1].trim(), nombre: m[2].trim() }));
+      };
+
+      const base = extraer(orbat4);
+      base.forEach(j => jugadores[j.nombre] = { papeletas: 4, razones: [], roles: new Set([j.rol]) });
+
+      const anteriores = [...extraer(orbat1), ...extraer(orbat2), ...extraer(orbat3)];
+      const rolesResp = ["Lider de escuadra", "Sargento", "RTO", "JTAC", "Lider de peloton", "Líder de Sección"].map(r => r.toLowerCase());
+
+      for (const { nombre, rol } of anteriores) {
+        if (!jugadores[nombre]) continue;
+        jugadores[nombre].roles.add(rol);
+        if (rolesResp.includes(rol.toLowerCase())) {
+          jugadores[nombre].papeletas = Math.max(0, jugadores[nombre].papeletas - 1);
+          jugadores[nombre].razones.push(`<span class='rol-resp'>${rol}</span>`);
+        }
+      }
+
+      const salida = Object.entries(jugadores).map(([nombre, obj]) => {
+        const verdes = [...obj.roles].filter(r => !obj.razones.includes(r)).map(r => `<span class='rol-ok'>${r}</span>`);
+        return `${nombre} - ${obj.papeletas} (${[...obj.razones, ...verdes].join(', ')})`;
+      }).join("\n");
+
+      document.getElementById("resultado").innerHTML = salida;
+      document.getElementById("ganador").textContent = '';
     }
 
     llenarMenus();
