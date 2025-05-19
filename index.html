@@ -263,7 +263,7 @@ Líder de Sección</textarea>
 		  }
 
 		  if (papeletas.length === 0) {
-			document.getElementById("ganador").textContent = "No hay papeletas suficientes.";
+			document.getElementById("ganador").textContent = "🎲 No hay papeletas suficientes.";
 			return;
 		  }
 
@@ -276,7 +276,7 @@ Líder de Sección</textarea>
 
 		  function ruleta() {
 			const elegido = papeletas[index % total];
-			document.getElementById("ganador").textContent = `${elegido}`;
+			document.getElementById("ganador").innerHTML = `<s>${elegido}</s>`;
 			index++;
 			delay *= incremento;
 			if (delay < maxDelay) {
