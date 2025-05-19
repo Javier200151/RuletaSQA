@@ -102,10 +102,10 @@ Líder de Sección</textarea>
     <li><span class="exento">⚪ Exento</span>: jugador excluido del sorteo por ser recluta o tener menos de 3 meses como miembro.</li>
   </ul>
 
-  <button onclick="analizar()">🔍 Analizar papeletas</button>
+  <button onclick="analizar()">Analizar papeletas</button>
   <pre id="resultado"></pre>
 
-  <button onclick="sortear()">🎲 Hacer sorteo</button>
+  <button onclick="sortear()">Hacer sorteo</button>
   <pre id="ganador" class="ganador"></pre>
 
   <script>
@@ -263,7 +263,7 @@ Líder de Sección</textarea>
 		  }
 
 		  if (papeletas.length === 0) {
-			document.getElementById("ganador").textContent = "🎲 No hay papeletas suficientes.";
+			document.getElementById("ganador").textContent = "No hay papeletas suficientes.";
 			return;
 		  }
 
@@ -276,14 +276,14 @@ Líder de Sección</textarea>
 
 		  function ruleta() {
 			const elegido = papeletas[index % total];
-			document.getElementById("ganador").textContent = `🎯 ${elegido}`;
+			document.getElementById("ganador").textContent = `${elegido}`;
 			index++;
 			delay *= incremento;
 			if (delay < maxDelay) {
 			  setTimeout(ruleta, delay);
 			} else {
 			  setTimeout(() => {
-				document.getElementById("ganador").textContent = `🎉 Ganador: ${ganadorFinal}`;
+				document.getElementById("ganador").textContent = `Ganador: ${ganadorFinal}`;
 			  }, 500);
 			}
 		  }
