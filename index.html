@@ -61,6 +61,7 @@
     .rol-hq { color: red; font-weight: bold; }
     .rol-resp { color: goldenrod; }
     .rol-resp-4 { color: purple; font-weight: bold; }
+	.buitre { color: black; font-weight: bold; }
     .rol-ok { color: darkgreen; }
     .exento { color: gray; font-style: italic; }
   </style>
@@ -92,6 +93,9 @@ Líder de Sección</textarea>
 
   <label for="rolesHQ">Roles de HQ (uno por línea)</label>
   <textarea id="rolesHQ"></textarea>
+  
+  <label for="buitre">Buitres (uno por línea)</label>
+  <textarea id="buitre"></textarea>
 
   <h3>Leyenda de colores</h3>
   <ul>
@@ -159,6 +163,11 @@ Líder de Sección</textarea>
         .split("\n")
         .map(r => normalizar(r))
         .filter(r => r);
+		
+	  const buitre = document.getElementById("buitre").value
+        .split("\n")
+        .map(r => normalizar(r))
+        .filter(r => r);
 
       resultadoPapeletas = {};
       justificaciones = {};
@@ -183,6 +192,10 @@ Líder de Sección</textarea>
           resultadoPapeletas[nombre] = 0;
           justificaciones[nombre].push(`<span class="rol-resp-4">${rol}</span>`);
         }
+		
+		for (const jugador of buitre)
+			resultadoPapeletas[jugador] = resultadoPapeletas[jugador] + 4;
+			justificaciones[nombre] = [`<span class='buitre'>${Buitre}</span>`];
       }
 
       const orbatsAnteriores = [...orbat1, ...orbat2, ...orbat3];
