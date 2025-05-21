@@ -61,15 +61,14 @@
     .rol-hq { color: red; font-weight: bold; }
     .rol-resp { color: goldenrod; }
     .rol-resp-4 { color: purple; font-weight: bold; }
-	.buitre { color: black; font-weight: bold; }
     .rol-ok { color: darkgreen; }
     .exento { color: gray; font-style: italic; }
+    .rol-vulture { color: black; font-weight: bold; }
   </style>
 </head>
 <body>
 
   <h1>Gestor de Papeletas - ORBAT</h1>
-
 
   <label for="orbat1">ORBAT 1</label>
   <textarea id="orbat1"></textarea>
@@ -93,9 +92,9 @@ Líder de Sección</textarea>
 
   <label for="rolesHQ">Roles de HQ (uno por línea)</label>
   <textarea id="rolesHQ"></textarea>
-  
-  <label for="buitre">Vultures (uno por línea)</label>
-  <textarea id="buitre"></textarea>
+
+  <label for="vultures">Miembros Vulture (uno por línea)</label>
+  <textarea id="vultures"></textarea>
 
   <h3>Leyenda de colores</h3>
   <ul>
@@ -103,7 +102,7 @@ Líder de Sección</textarea>
     <li><span class="rol-resp-4">🟣 Rol de responsabilidad en ORBAT a jugar</span>: eliminado por tener rol de responsabilidad directamente en el ORBAT base.</li>
     <li><span class="rol-resp">🟡 Rol de responsabilidad</span>: se resta 1 papeleta por cada vez que aparece en partidas anteriores con ese rol.</li>
     <li><span class="rol-ok">🟢 Rol neutral</span>: sin efecto sobre las papeletas.</li>
-	<li><span class="buitre">⚫ Vulture</span>: suma 4 papeletas ese participante.</li>
+	<li><span class="rol-vulture">⚫ Vulture</span>: Suma 4 papeletas ese participante.</li>
     <li><span class="exento">⚪ Exento</span>: jugador excluido del sorteo por ser recluta o tener menos de 3 meses como miembro.</li>
   </ul>
 
@@ -164,11 +163,11 @@ Líder de Sección</textarea>
         .split("\n")
         .map(r => normalizar(r))
         .filter(r => r);
-		
-	  const buitre = document.getElementById("buitre").value
+
+      const vulturesList = document.getElementById("vultures").value
         .split("\n")
-        .map(r => normalizar(r))
-        .filter(r => r);
+        .map(v => normalizar(v))
+        .filter(v => v);
 
       resultadoPapeletas = {};
       justificaciones = {};
@@ -177,6 +176,7 @@ Líder de Sección</textarea>
       for (const jugador of orbat4) {
         const rol = jugador.rol.trim();
         const nombre = jugador.nombre;
+        const normNombre = normalizar(nombre);
 
         const exencion = esExento(nombre);
         if (exencion) {
@@ -185,18 +185,19 @@ Líder de Sección</textarea>
           continue;
         }
 
-        resultadoPapeletas[nombre] = 4;
+        const esVulture = vulturesList.includes(normNombre);
+        resultadoPapeletas[nombre] = esVulture ? 8 : 4;
         justificaciones[nombre] = [];
         todosLosRoles[nombre] = new Set();
+
+        if (esVulture) {
+          justificaciones[nombre].push(`<span class="rol-vulture">Vulture</span>`);
+        }
 
         if (rolesResp.includes(normalizar(rol))) {
           resultadoPapeletas[nombre] = 0;
           justificaciones[nombre].push(`<span class="rol-resp-4">${rol}</span>`);
         }
-		
-		for (const jugador of buitre)
-			resultadoPapeletas[jugador] = resultadoPapeletas[jugador] + 4;
-			justificaciones[nombre] = [`<span class='buitre'>${Buitre}</span>`];
       }
 
       const orbatsAnteriores = [...orbat1, ...orbat2, ...orbat3];
@@ -245,9 +246,16 @@ Líder de Sección</textarea>
       const salida = Object.entries(resultadoPapeletas)
         .map(([nombre, count]) => {
           const motivos = justificaciones[nombre]?.join(", ");
+          const normNombre = normalizar(nombre);
+          let clase = '';
+          if (vulturesList.includes(normNombre)) {
+            clase = 'rol-vulture';
+          } else if (justificaciones[nombre]?.[0]?.includes('exento')) {
+            clase = 'exento';
+          }
           return motivos
-            ? `<span class="${motivos.includes('exento') ? 'exento' : ''}">${nombre} - ${count} (${motivos})</span>`
-            : `${nombre} - ${count}`;
+            ? `<span class="${clase}">${nombre} - ${count} (${motivos})</span>`
+            : `<span class="${clase}">${nombre} - ${count}</span>`;
         })
         .join("\n");
 
@@ -267,43 +275,43 @@ Líder de Sección</textarea>
       return jugadores;
     }
 
-	function sortear() {
-		  const papeletas = [];
-		  for (const [nombre, count] of Object.entries(resultadoPapeletas)) {
-			if (justificaciones[nombre]?.[0]?.includes('exento')) continue;
-			for (let i = 0; i < count; i++) {
-			  papeletas.push(nombre);
-			}
-		  }
+    function sortear() {
+      const papeletas = [];
+      for (const [nombre, count] of Object.entries(resultadoPapeletas)) {
+        if (justificaciones[nombre]?.[0]?.includes('exento')) continue;
+        for (let i = 0; i < count; i++) {
+          papeletas.push(nombre);
+        }
+      }
 
-		  if (papeletas.length === 0) {
-			document.getElementById("ganador").textContent = "🎲 No hay papeletas suficientes.";
-			return;
-		  }
+      if (papeletas.length === 0) {
+        document.getElementById("ganador").textContent = "No hay papeletas suficientes.";
+        return;
+      }
+	  console.log(papeletas);
+      let index = 0;
+      let delay = 20;
+      const maxDelay = 1000;
+      const incremento = 1.1;
+      const total = papeletas.length;
+      const ganadorFinal = papeletas[Math.floor(Math.random() * total)];
 
-		  let index = 0;
-		  let delay = 20;
-		  const maxDelay = 1000;
-		  const incremento = 1.1;
-		  const total = papeletas.length;
-		  const ganadorFinal = papeletas[Math.floor(Math.random() * total)];
+      function ruleta() {
+        const elegido = papeletas[index % total];
+        document.getElementById("ganador").innerHTML = `<s>${elegido}</s>`;
+        index++;
+        delay *= incremento;
+        if (delay < maxDelay) {
+          setTimeout(ruleta, delay);
+        } else {
+          setTimeout(() => {
+            document.getElementById("ganador").textContent = `Ganador: ${ganadorFinal}`;
+          }, 500);
+        }
+      }
 
-		  function ruleta() {
-			const elegido = papeletas[index % total];
-			document.getElementById("ganador").innerHTML = `<s>${elegido}</s>`;
-			index++;
-			delay *= incremento;
-			if (delay < maxDelay) {
-			  setTimeout(ruleta, delay);
-			} else {
-			  setTimeout(() => {
-				document.getElementById("ganador").textContent = `Ganador: ${ganadorFinal}`;
-			  }, 500);
-			}
-		  }
-
-		  ruleta();
-		}
+      ruleta();
+    }
   </script>
 
 </body>
