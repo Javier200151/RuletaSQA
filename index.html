@@ -266,6 +266,7 @@ Líder de Sección</textarea>
     function extraerJugadores(orbatText) {
       const regex = /([^\n-]+)\s*\([^)]+\)-([^\n]+)/g;
       const jugadores = [];
+      orbatText = orbatText.replace(/\)\s-\s*/g, ")-");
       let match;
       while ((match = regex.exec(orbatText)) !== null) {
         const rol = match[1].trim();
