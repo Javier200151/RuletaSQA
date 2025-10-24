@@ -275,8 +275,12 @@ Líder de Sección</textarea>
         if (nombre) jugadores.push({ rol, nombre });
       }
       return jugadores;
-    }
-
+    }/*
+    document.getElementById("abrirRuleta").addEventListener("click", () => {
+          const opciones = ["Ónix", "Ícaro", "Titán", "Hidra", "Apolo", "Falcón"];
+          localStorage.setItem("opcionesRuleta", JSON.stringify(opciones));
+          window.location.href = "Sorteo.html"; // Redirige a la ruleta
+          */
     function sortear() {
       const papeletas = [];
       for (const [nombre, count] of Object.entries(resultadoPapeletas)) {
@@ -290,6 +294,8 @@ Líder de Sección</textarea>
         document.getElementById("ganador").textContent = "No hay papeletas suficientes.";
         return;
       }
+    localStorage.setItem("opcionesRuleta", JSON.stringify(papeletas));
+    window.location.href = "sorteo.html"; // Redirige a la ruleta
 	  console.log(papeletas);
       let index = 0;
       let delay = 20;

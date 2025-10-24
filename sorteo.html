@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Ruleta de Sorteo</title>
+  <style>
+    body {
+      background: #0d1117;
+      color: #e6edf3;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .ruleta-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    canvas {
+      border-radius: 50%;
+      box-shadow: 0 0 25px rgba(255,255,255,0.2);
+    }
+
+    .puntero {
+      position: absolute;
+      top: 0px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-50%);
+      width: 0;
+      height: 0;
+      border-left: 15px solid transparent;
+      border-right: 15px solid transparent;
+      border-top: 25px solid #ffb800; /* ⬆️ Cambiado a "border-top" */
+      filter: drop-shadow(0 0 4px #ffb800);
+      z-index: 10;
+    }
+
+    button {
+      padding: 10px 20px;
+      background: #238636;
+      border: none;
+      color: white;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #2ea043;
+    }
+
+    #legend {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 400px;
+      gap: 6px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 6px;
+      padding: 4px 8px;
+    }
+
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+    }
+
+    #resultado {
+      margin-top: 15px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #ffb800;
+      text-shadow: 0 0 8px #ffb800;
+    }
+  </style>
+</head>
+<body>
+  <div class="ruleta-container">
+    <div class="puntero"></div>
+    <canvas id="ruleta" width="400" height="400"></canvas>
+  </div>
+  <button id="girarBtn">🎯 Girar Ruleta</button>
+  <div id="resultado"></div>
+  <div id="legend"></div>
+
+  <script>
+    const canvas = document.getElementById("ruleta");
+    const ctx = canvas.getContext("2d");
+    const btn = document.getElementById("girarBtn");
+    const resultado = document.getElementById("resultado");
+    const legend = document.getElementById("legend");
+
+    const opciones = JSON.parse(localStorage.getItem("opcionesRuleta")) || [
+      "Apolo","Falcon","Apolo","Titan","Hydra","Falcon","Titan","Hydra"
+    ];
+
+    // Contar frecuencia por nombre
+    const conteo = {};
+    opciones.forEach(n => conteo[n] = (conteo[n] || 0) + 1);
+
+    const nombres = Object.keys(conteo);
+    
+    // 🎨 Paleta de colores espaciados
+    const colores = {};
+    for (let i = 0; i < nombres.length; i++) {
+      const hue = (i * 360 / nombres.length) % 360;
+      colores[nombres[i]] = `hsl(${hue}, 85%, 55%)`;
+    }
+
+    // 🧩 Leyenda
+    nombres.forEach(nombre => {
+      const item = document.createElement("div");
+      item.className = "legend-item";
+      item.innerHTML = `<div class="legend-color" style="background:${colores[nombre]}"></div> ${nombre} (${conteo[nombre]})`;
+      legend.appendChild(item);
+    });
+
+    const total = opciones.length;
+    let rotacionActual = 0;
+    let girando = false;
+
+    // 🌀 Dibuja la ruleta agrupando sectores contiguos iguales
+    function dibujarRuleta(rotacion = 0) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      const radio = cx - 10;
+      const anglePerSector = (2 * Math.PI) / total;
+
+      let startAngle = rotacion;
+
+      for (let i = 0; i < total;) {
+        const nombre = opciones[i];
+        let j = i + 1;
+        // Agrupar sectores contiguos con el mismo nombre
+        while (j < total && opciones[j] === nombre) j++;
+        const count = j - i;
+        const endAngle = startAngle + anglePerSector * count;
+
+        // Dibujar el grupo
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, radio, startAngle, endAngle);
+        ctx.fillStyle = colores[nombre];
+        ctx.fill();
+        ctx.strokeStyle = "#111";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        startAngle = endAngle;
+        i = j;
+      }
+
+      // Flecha visual ya está en HTML (puntero fijo)
+    }
+
+    function girarRuleta() {
+      if (girando) return;
+      girando = true;
+      resultado.textContent = "";
+      const giros = Math.random() * 360 + 2000;
+      const duracion = 4000;
+      const inicio = performance.now();
+
+      function animar(t) {
+        const progreso = Math.min((t - inicio) / duracion, 1);
+        const easeOut = 1 - Math.pow(1 - progreso, 3);
+        rotacionActual = giros * easeOut;
+        dibujarRuleta(rotacionActual * Math.PI / 180);
+
+        if (progreso < 1) {
+          requestAnimationFrame(animar);
+        } else {
+          girando = false;
+          determinarGanador();
+        }
+      }
+      requestAnimationFrame(animar);
+    }
+
+    function determinarGanador() {
+      const anguloFinal = (rotacionActual % 360) * Math.PI / 180;
+      const anglePerSector = (2 * Math.PI) / total;
+
+      let indiceGanador = Math.floor(((1.5 * Math.PI - anguloFinal + 2 * Math.PI) % (2 * Math.PI)) / anglePerSector);
+      const ganador = opciones[indiceGanador];
+      resultado.textContent = `Ganador: ${ganador}`;
+    }
+
+    dibujarRuleta();
+    btn.addEventListener("click", girarRuleta);
+  </script>
+</body>
+</html>
