@@ -110,7 +110,6 @@ Líder de Sección</textarea>
   <pre id="resultado"></pre>
 
   <button onclick="sortear()">Hacer sorteo</button>
-  <pre id="ganador" class="ganador"></pre>
 
   <script>
     let resultadoPapeletas = {};
@@ -275,12 +274,7 @@ Líder de Sección</textarea>
         if (nombre) jugadores.push({ rol, nombre });
       }
       return jugadores;
-    }/*
-    document.getElementById("abrirRuleta").addEventListener("click", () => {
-          const opciones = ["Ónix", "Ícaro", "Titán", "Hidra", "Apolo", "Falcón"];
-          localStorage.setItem("opcionesRuleta", JSON.stringify(opciones));
-          window.location.href = "Sorteo.html"; // Redirige a la ruleta
-          */
+    }
     function sortear() {
       const papeletas = [];
       for (const [nombre, count] of Object.entries(resultadoPapeletas)) {
@@ -304,21 +298,6 @@ Líder de Sección</textarea>
       const total = papeletas.length;
       const ganadorFinal = papeletas[Math.floor(Math.random() * total)];
 
-      function ruleta() {
-        const elegido = papeletas[index % total];
-        document.getElementById("ganador").innerHTML = `<s>${elegido}</s>`;
-        index++;
-        delay *= incremento;
-        if (delay < maxDelay) {
-          setTimeout(ruleta, delay);
-        } else {
-          setTimeout(() => {
-            document.getElementById("ganador").textContent = `Ganador: ${ganadorFinal}`;
-          }, 500);
-        }
-      }
-
-      ruleta();
     }
   </script>
 

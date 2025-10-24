@@ -94,7 +94,7 @@
     <div class="puntero"></div>
     <canvas id="ruleta" width="400" height="400"></canvas>
   </div>
-  <button id="girarBtn">🎯 Girar Ruleta</button>
+  <button id="girarBtn">Girar Ruleta</button>
   <div id="resultado"></div>
   <div id="legend"></div>
 
@@ -115,14 +115,14 @@
 
     const nombres = Object.keys(conteo);
     
-    // 🎨 Paleta de colores espaciados
+    // Paleta de colores espaciados
     const colores = {};
     for (let i = 0; i < nombres.length; i++) {
       const hue = (i * 360 / nombres.length) % 360;
       colores[nombres[i]] = `hsl(${hue}, 85%, 55%)`;
     }
 
-    // 🧩 Leyenda
+    // Leyenda
     nombres.forEach(nombre => {
       const item = document.createElement("div");
       item.className = "legend-item";
@@ -134,7 +134,7 @@
     let rotacionActual = 0;
     let girando = false;
 
-    // 🌀 Dibuja la ruleta agrupando sectores contiguos iguales
+    // Dibuja la ruleta agrupando sectores contiguos iguales
     function dibujarRuleta(rotacion = 0) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const cx = canvas.width / 2;
