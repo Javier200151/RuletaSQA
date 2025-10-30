@@ -14,6 +14,36 @@
       text-align: center;
       color: #333;
     }
+    .refresh-floating {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      background-color: #ffffff;
+      border: none;
+      color: white;
+      font-size: 22px;
+      padding: 10px;
+      border-radius: 50%;
+      cursor: pointer;
+      z-index: 9999;
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      transition: background-color 0.25s ease, transform 0.2s ease;
+    }
+
+    .refresh-floating:hover {
+      background-color: #1877d6;
+      transform: scale(1.1);
+    }
+
+    .refresh-floating:active {
+      transform: scale(0.9);
+    }
+
+
     textarea {
       width:  100%;
       height: 120px;
@@ -70,16 +100,22 @@
 
   <h1>Gestor de Papeletas - ORBAT</h1>
 
+  <button id="btnActualizar" class="refresh-floating" onclick="cargarMisiones()">🔄</button>
+  
   <label for="orbat1">ORBAT 1</label>
+  <select id="select1"></select>
   <textarea id="orbat1"></textarea>
 
   <label for="orbat2">ORBAT 2</label>
+  <select id="select2"></select>
   <textarea id="orbat2"></textarea>
 
   <label for="orbat3">ORBAT 3</label>
+  <select id="select3"></select>
   <textarea id="orbat3"></textarea>
 
   <label for="orbat4">ORBAT A JUGAR</label>
+  <select id="select4"></select>
   <textarea id="orbat4"></textarea>
 
   <label for="responsables">Roles de responsabilidad (uno por línea)</label>
@@ -112,6 +148,42 @@ Líder de Sección</textarea>
   <button onclick="sortear()">Hacer sorteo</button>
 
   <script>
+    async function cargarMisiones() {
+      // Cambia esta URL por la URL del backend:
+      const API_URL = "https://sqa-backend-production.up.railway.app/api/misiones";
+
+      const res = await fetch(API_URL);
+      const misiones = await res.json();
+
+      for (let i = 1; i <= 4; i++) {
+        const select = document.getElementById(`select${i}`);
+        const textarea = document.getElementById(`orbat${i}`);
+
+        // Opción por defecto
+        const optDefault = document.createElement("option");
+        optDefault.textContent = "Selecciona una misión...";
+        optDefault.value = "";
+        select.appendChild(optDefault);
+
+        // Rellenar select con títulos
+        misiones.forEach(m => {
+          const opt = document.createElement("option");
+          opt.value = m.titulo;  // Guardamos título como value
+          opt.dataset.orbat = m.orbat; // Guardamos el ORBAT en un atributo del option
+          opt.textContent = m.titulo;
+          select.appendChild(opt);
+        });
+
+        // Evento al seleccionar misión
+        select.addEventListener("change", function () {
+          const selectedOption = this.options[this.selectedIndex];
+          const orbat = selectedOption.dataset.orbat || "";
+          textarea.value = orbat;
+        });
+      }
+    }
+
+    cargarMisiones();
     let resultadoPapeletas = {};
     let justificaciones = {};
     let todosLosRoles = {};
@@ -259,7 +331,7 @@ Líder de Sección</textarea>
         .join("\n");
 
       document.getElementById("resultado").innerHTML = salida || "No hay jugadores.";
-      document.getElementById("ganador").textContent = "";
+      //document.getElementById("ganador").textContent = "";
     }
 
     function extraerJugadores(orbatText) {
@@ -285,7 +357,7 @@ Líder de Sección</textarea>
       }
 
       if (papeletas.length === 0) {
-        document.getElementById("ganador").textContent = "No hay papeletas suficientes.";
+        //document.getElementById("ganador").textContent = "No hay papeletas suficientes.";
         return;
       }
     localStorage.setItem("opcionesRuleta", JSON.stringify(papeletas));
