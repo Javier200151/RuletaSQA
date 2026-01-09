@@ -150,7 +150,8 @@ Líder de Sección</textarea>
   <script>
     async function cargarMisiones() {
       // Cambia esta URL por la URL del backend:
-      const API_URL = "https://sqa-backend-production.up.railway.app/api/misiones";
+      const API_URL = "https://sqa-backend.onrender.com/api/misiones";
+      //const API_URL = "http://127.0.0.1:5000/api/misiones";
 
       const res = await fetch(API_URL);
       const misiones = await res.json();
