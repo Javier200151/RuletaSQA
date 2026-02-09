@@ -196,8 +196,8 @@ Líder de Sección</textarea>
 
     async function obtenerMiembros() {
 	  // Producción:
-	  //const url = "https://sqa-backend.onrender.com/api/miembros";
-	  const url = "http://127.0.0.1:5000/api/miembros";
+	  const url = "https://sqa-backend.onrender.com/api/miembros";
+	  //const url = "http://127.0.0.1:5000/api/miembros";
 
 	  const response = await fetch(url);
 	  if (!response.ok) throw new Error("No se pudo cargar /api/miembros");
